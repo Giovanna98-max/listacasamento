@@ -23,6 +23,58 @@
   </style>
 </head>
 <body>
+  <div id="scanner"></div>
+<div id="resultado"></div>
+<div id="lista-codigos"></div>
+
+<script>
+    let convidados = [];
+
+    async function carregarDadosPlanilha() {
+        const url = 'https://opensheet.elk.sh/1IkI3IVm0Awu4bqilDHBk6M_t1aaN-zEUT3Y_O0UBoH4/Página1';
+        try {
+            const resposta = await fetch(url);
+            const dados = await resposta.json();
+            convidados = dados.map(item => item['Código']);
+
+            // Mostrar os códigos carregados (só para teste)
+            const listaDiv = document.getElementById("lista-codigos");
+            listaDiv.innerHTML = "<h3>📋 Códigos lidos da planilha:</h3><ul>" + 
+                convidados.map(c => `<li>${c}</li>`).join("") + "</ul>";
+        } catch (erro) {
+            console.error("Erro ao carregar dados da planilha:", erro);
+        }
+    }
+
+    function iniciarScanner() {
+        const html5QrCode = new Html5Qrcode("scanner");
+        const config = { fps: 10, qrbox: 250 };
+
+        html5QrCode.start(
+            { facingMode: "environment" },
+            config,
+            (decodedText, decodedResult) => {
+                html5QrCode.stop(); // parar após 1 leitura
+                validarCodigo(decodedText);
+            },
+            (errorMessage) => {
+                console.warn(`Erro no scan: ${errorMessage}`);
+            }
+        ).catch(err => console.error("Erro ao iniciar scanner", err));
+    }
+
+    function validarCodigo(codigo) {
+        const resultadoDiv = document.getElementById("resultado");
+        if (convidados.includes(codigo.trim())) {
+            resultadoDiv.innerHTML = `<p style="color:green; font-weight:bold;">✔️ Convidado confirmado: ${codigo}</p>`;
+        } else {
+            resultadoDiv.innerHTML = `<p style="color:red; font-weight:bold;">❌ Nome não encontrado: ${codigo}</p>`;
+        }
+    }
+
+    carregarDadosPlanilha();
+    iniciarScanner();
+</script>
   <h1>Check-in do Casamento</h1>
   <div id="reader"></div>
   <div id="lista-codigos" style="margin-top: 20px; text-align: left;"></div>
