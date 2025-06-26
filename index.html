@@ -31,7 +31,7 @@
     const sheetID = "1IkI3IVm0Awu4bqilDHBk6M_t1aaN-zEUT3Y_O0UBoH4";
     const sheetName = "Página1";
     const apiKey = "AIzaSyD3-IyxojgVZWhx5_TUN-Uu5M2E-SqxFIM"; // API pública (limitada)
-    const endpoint = https://sheets.googleapis.com/v4/spreadsheets/${sheetID}/values/${sheetName}?key=${apiKey};
+    const endpoint = `https://sheets.googleapis.com/v4/spreadsheets/${sheetID}/values/${sheetName}?key=${apiKey}`;
 
     let convidados = [];
 
@@ -48,10 +48,10 @@
       const nome = qrCodeMessage.trim();
 
       if (convidados.includes(nome)) {
-        result.innerHTML = ✅ Entrada autorizada: <br><strong>${nome}</strong>;
+        result.innerHTML = `✅ Entrada autorizada: <br><strong>${nome}</strong>`;
         result.style.color = "green";
       } else {
-        result.innerHTML = ❌ Nome não encontrado: <br><strong>${nome}</strong>;
+        result.innerHTML = `❌ Nome não encontrado: <br><strong>${nome}</strong>`;
         result.style.color = "red";
       }
     }
