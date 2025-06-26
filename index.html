@@ -2,51 +2,74 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <title>Check-in de Convidados</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Check-in do Casamento</title>
   <script src="https://unpkg.com/html5-qrcode"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 20px;
+    }
+    #reader {
+      width: 300px;
+      margin: auto;
+    }
+    #result {
+      margin-top: 20px;
+      font-size: 20px;
+      font-weight: bold;
+    }
+  </style>
 </head>
 <body>
   <h1>Check-in do Casamento</h1>
-  <div id="reader" style="width: 300px"></div>
-  <h2 id="resultado"></h2>
+  <div id="reader"></div>
+  <div id="result">Aguardando leitura...</div>
 
   <script>
-    // ID da sua planilha
-    const SHEET_ID = "1IkI3IVm0Awu4bqilDHBk6M_t1aaN-zEUT3Y_O0UBoH4";
-    const SHEET_NAME = "Página1"; // altere se o nome da aba for outro
+    const sheetID = "1IkI3IVm0Awu4bqilDHBk6M_t1aaN-zEUT3Y_O0UBoH4";
+    const sheetName = "Página1";
+    const apiKey = "AIzaSyD3-IyxojgVZWhx5_TUN-Uu5M2E-SqxFIM"; // API pública (limitada)
+    const endpoint = https://sheets.googleapis.com/v4/spreadsheets/${sheetID}/values/${sheetName}?key=${apiKey};
 
-    async function verificarConvidado(nomeDoQRCode) {
-      const url = https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${SHEET_NAME};
-      try {
-        const res = await fetch(url);
-        const text = await res.text();
-        const json = JSON.parse(text.substr(47).slice(0, -2));
-        const dados = json.table.rows.map(r => r.c[0]?.v?.toLowerCase());
+    let convidados = [];
 
-        return dados.includes(nomeDoQRCode.toLowerCase());
-      } catch (error) {
-        console.error("Erro ao buscar planilha:", error);
-        return false;
+    fetch(endpoint)
+      .then(response => response.json())
+      .then(data => {
+        const rows = data.values;
+        rows.shift(); // remove o cabeçalho
+        convidados = rows.map(row => row[0]?.trim());
+      });
+
+    function onScanSuccess(qrCodeMessage) {
+      const result = document.getElementById("result");
+      const nome = qrCodeMessage.trim();
+
+      if (convidados.includes(nome)) {
+        result.innerHTML = ✅ Entrada autorizada: <br><strong>${nome}</strong>;
+        result.style.color = "green";
+      } else {
+        result.innerHTML = ❌ Nome não encontrado: <br><strong>${nome}</strong>;
+        result.style.color = "red";
       }
     }
 
-    function onScanSuccess(decodedText) {
-      html5QrcodeScanner.clear();
+    const html5QrCode = new Html5Qrcode("reader");
+    const config = { fps: 10, qrbox: 250 };
 
-      document.getElementById("resultado").innerText = "Verificando...";
-      verificarConvidado(decodedText).then(existe => {
-        if (existe) {
-          document.getElementById("resultado").innerText = ✅ Entrada autorizada para: ${decodedText};
-        } else {
-          document.getElementById("resultado").innerText = ❌ Nome não encontrado: ${decodedText};
-        }
-      });
-    }
-
-    const html5QrcodeScanner = new Html5QrcodeScanner(
-      "reader", { fps: 10, qrbox: 250 }
-    );
-    html5QrcodeScanner.render(onScanSuccess);
+    Html5Qrcode.getCameras().then(cameras => {
+      if (cameras && cameras.length) {
+        html5QrCode.start(
+          cameras[0].id,
+          config,
+          onScanSuccess
+        );
+      }
+    }).catch(err => {
+      document.getElementById("result").innerText = "Erro ao acessar a câmera.";
+    });
   </script>
 </body>
 </html>
