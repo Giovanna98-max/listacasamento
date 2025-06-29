@@ -3,100 +3,64 @@
 <head>
   <meta charset="UTF-8">
   <title>Check-in do Casamento</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      padding: 20px;
-    }
-    #reader {
-      width: 300px;
-      margin: auto;
-    }
-    #result {
-      margin-top: 20px;
-      font-size: 18px;
-    }
-    .success {
-      color: green;
-      font-weight: bold;
-    }
-    .error {
-      color: red;
-      font-weight: bold;
-    }
-    ul {
-      text-align: left;
-      display: inline-block;
-    }
+    body { font-family: Arial, sans-serif; text-align: center; margin-top: 20px; }
+    video { width: 300px; height: auto; margin-top: 10px; }
+    #result { margin-top: 20px; font-size: 18px; font-weight: bold; }
+    #codesList { text-align: left; max-width: 300px; margin: 20px auto; }
   </style>
-  <script src="https://unpkg.com/html5-qrcode@2.3.8/minified/html5-qrcode.min.js"></script>
 </head>
 <body>
   <h2>Check-in do Casamento</h2>
-  <div id="reader"></div>
+  <video id="preview"></video>
   <div id="result"></div>
-  <div id="lista-codigos">
-    <h3>📋 Códigos lidos da planilha:</h3>
-    <ul id="codigos-lista"></ul>
+  <div id="codesList">
+    <p>📋 <strong>Códigos lidos da planilha:</strong></p>
+    <ul id="codeList"></ul>
   </div>
 
-  <script>
-    const planilhaID = "1IkI3IVm0Awu4bqilDHBk6M_t1aaN-zEUT3Y_O0UBoH4";
-    const aba = "Sheet1";
-    const apiURL = `https://opensheet.elk.sh/${planilhaID}/${aba}`;
+  <script type="module">
+    import QrScanner from "https://cdn.jsdelivr.net/npm/qr-scanner@1.4.2/qr-scanner.min.js";
 
-    let convidados = [];
+    const videoElem = document.getElementById('preview');
+    const resultElem = document.getElementById('result');
+    const codeListElem = document.getElementById('codeList');
 
-    fetch(apiURL)
-      .then(response => response.json())
+    let validGuests = {};
+
+    // Carrega os dados da planilha
+    fetch("https://opensheet.elk.sh/1IkI3IVm0Awu4bqilDHBk6M_t1aaN-zEUT3Y_O0UBoH4/Sheet1")
+      .then(res => res.json())
       .then(data => {
-        convidados = data.map(item => ({
-          codigo: item["Código"]?.trim().toUpperCase(),
-          nome: item["Nome"]?.trim()
-        }));
-
-        const lista = document.getElementById("codigos-lista");
-        convidados.forEach(item => {
-          const li = document.createElement("li");
-          li.textContent = item.codigo;
-          lista.appendChild(li);
+        data.forEach(item => {
+          const code = item["Código"]?.trim();
+          const nome = item["Nome"]?.trim();
+          if (code && nome) {
+            validGuests[code] = nome;
+            const li = document.createElement("li");
+            li.textContent = code;
+            codeListElem.appendChild(li);
+          }
         });
 
-        iniciarScanner();
+        startScanner();
       })
-      .catch(error => {
-        document.getElementById("result").innerHTML = "<span class='error'>Erro ao carregar dados da planilha.</span>";
-        console.error("Erro ao carregar a planilha:", error);
+      .catch(err => {
+        resultElem.innerHTML = "<span style='color:red;'>Erro ao carregar dados da planilha.</span>";
+        console.error(err);
       });
 
-    function iniciarScanner() {
-      const scanner = new Html5Qrcode("reader");
-
-      function onScanSuccess(qrCodeMessage) {
-        const resultado = document.getElementById("result");
-        const codigoLido = qrCodeMessage.trim().toUpperCase();
-        const convidado = convidados.find(p => p.codigo === codigoLido);
-
-        if (convidado) {
-          resultado.innerHTML = `<span class="success">✔️ ${convidado.nome} confirmado(a) (Código: ${convidado.codigo})</span>`;
+    function startScanner() {
+      const scanner = new QrScanner(videoElem, result => {
+        const code = result.data.trim();
+        const nome = validGuests[code];
+        if (nome) {
+          resultElem.innerHTML = `<span style='color:green;'>✔️ Convidado confirmado: <strong>${nome}</strong> (${code})</span>`;
         } else {
-          resultado.innerHTML = `<span class="error">❌ Código não encontrado: ${codigoLido}</span>`;
+          resultElem.innerHTML = `<span style='color:red;'>❌ Código não encontrado: ${code}</span>`;
         }
-
-        scanner.stop().then(() => {
-          setTimeout(() => {
-            resultado.innerHTML = "";
-            iniciarScanner();
-          }, 3500);
-        });
-      }
-
-      scanner.start({ facingMode: "environment" }, {
-        fps: 10,
-        qrbox: 200
-      }, onScanSuccess);
+      });
+      scanner.start();
     }
   </script>
 </body>
