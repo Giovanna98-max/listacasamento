@@ -42,8 +42,9 @@
       try {
         const resposta = await fetch(url);
         const dados = await resposta.json();
-        convidados = dados.map(item => item['Código']?.trim());
+        convidados = dados.map(item => item['Código']?.trim()).filter(Boolean);
         mostrarCodigosNaTela();
+        iniciarScanner(); // <-- Agora inicia o scanner somente após carregar os dados
       } catch (erro) {
         console.error("Erro ao carregar dados da planilha:", erro);
       }
@@ -77,15 +78,14 @@
           validarCodigo(decodedText);
         },
         (errorMessage) => {
-          // console.warn(`Erro no scan: ${errorMessage}`);
+          // ignorado
         }
       ).catch(err => {
         console.error("Erro ao iniciar scanner:", err);
       });
     }
 
-    carregarDadosPlanilha();
-    iniciarScanner();
+    carregarDadosPlanilha(); // início do fluxo
   </script>
 </body>
 </html>
