@@ -1,41 +1,52 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Check-in do Casamento</title>
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 30px;
+    }
+    #reader {
+      width: 300px;
+      margin: 0 auto;
+    }
+    #resultado {
+      font-size: 18px;
+      margin-top: 20px;
+      font-weight: bold;
+    }
+    #lista-codigos {
+      margin-top: 40px;
+      text-align: left;
+      max-width: 300px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+  </style>
 </head>
 <body>
-  <h2 style="text-align:center;">Check-in do Casamento</h2>
-  <div id="leitor" style="width:300px; margin: auto;"></div>
-  <div id="resultado" style="text-align:center; margin-top: 20px;"></div>
-  <div id="lista-codigos" style="margin-top: 40px; padding: 10px;"></div>
+  <h2>Check-in do Casamento</h2>
+  <div id="reader"></div>
+  <div id="resultado"></div>
+  <div id="lista-codigos"></div>
 
   <script>
+    const url = 'https://opensheet.elk.sh/1IkI3IVm0Awu4bqilDHBk6M_t1aaN-zEUT3Y_O0UBoH4/Sheet1';
     let convidados = [];
 
-    function iniciarScanner() {
-      const html5QrCode = new Html5Qrcode("leitor");
-      const config = { fps: 10, qrbox: 250 };
-
-      html5QrCode.start({ facingMode: "environment" }, config,
-        (decodedText) => {
-          html5QrCode.stop();
-          validarCodigo(decodedText);
-          setTimeout(() => iniciarScanner(), 2000);
-        },
-        (error) => {}
-      ).catch(err => {
-        console.error("Erro ao iniciar scanner", err);
-      });
-    }
-
-    function validarCodigo(codigo) {
-      const resultadoDiv = document.getElementById("resultado");
-      if (convidados.includes(codigo.trim())) {
-        resultadoDiv.innerHTML = `<p style="color:green; font-weight:bold;">✔️ Convidado confirmado: ${codigo}</p>`;
-      } else {
-        resultadoDiv.innerHTML = `<p style="color:red; font-weight:bold;">❌ Nome não encontrado: ${codigo}</p>`;
+    async function carregarDadosPlanilha() {
+      try {
+        const resposta = await fetch(url);
+        const dados = await resposta.json();
+        convidados = dados.map(item => item['Código'].trim());
+        mostrarCodigosNaTela();
+      } catch (erro) {
+        document.getElementById("resultado").innerHTML = "<span style='color: red;'>Erro ao carregar dados da planilha.</span>";
+        console.error("Erro ao carregar dados da planilha:", erro);
       }
     }
 
@@ -45,17 +56,22 @@
         convidados.map(c => `<li>${c}</li>`).join("") + "</ul>";
     }
 
-    async function carregarDadosPlanilha() {
-      const url = 'https://opensheet.elk.sh/1IkI3IVm0Awu4bqi1DHbK6Mt1zaN-zEUT3Y_O0UBoH4/Sheet1';
-      try {
-        const resposta = await fetch(url);
-        const dados = await resposta.json();
-        convidados = dados.map(item => item['Código'].trim());
-        mostrarCodigosNaTela();
-      } catch (erro) {
-        document.getElementById("resultado").innerText = "Erro ao carregar dados da planilha.";
-        console.error("Erro ao carregar dados:", erro);
+    function onScanSuccess(decodedText) {
+      const resultadoDiv = document.getElementById("resultado");
+      if (convidados.includes(decodedText.trim())) {
+        resultadoDiv.innerHTML = `<span style="color: green;">✔️ Convidado confirmado: ${decodedText}</span>`;
+      } else {
+        resultadoDiv.innerHTML = `<span style="color: red;">❌ Nome não encontrado: ${decodedText}</span>`;
       }
+    }
+
+    function iniciarScanner() {
+      const html5QrCode = new Html5Qrcode("reader");
+      const config = { fps: 10, qrbox: 250 };
+      html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess)
+        .catch(err => {
+          console.error("Erro ao iniciar o scanner:", err);
+        });
     }
 
     carregarDadosPlanilha();
