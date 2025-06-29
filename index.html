@@ -53,7 +53,7 @@
     function mostrarCodigosNaTela() {
       const listaDiv = document.getElementById("lista-codigos");
       listaDiv.innerHTML = "<h3>📋 Códigos lidos da planilha:</h3><ul>" +
-        convidados.map(c => `<li>${c}</li>`).join("") +
+        convidados = dados.map(item => item['CÃ³digo']?.trim?.());
         "</ul>";
     }
 
