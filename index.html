@@ -1,7 +1,8 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Check-in do Casamento</title>
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
   <style>
@@ -16,27 +17,37 @@
     }
     #resultado {
       margin-top: 20px;
-      font-size: 20px;
+      font-size: 18px;
+    }
+    #lista-codigos {
+      margin-top: 40px;
+      padding: 10px;
+      font-family: monospace;
+      text-align: left;
+      max-width: 500px;
+      margin-left: auto;
+      margin-right: auto;
     }
   </style>
 </head>
 <body>
-
   <h1>Check-in do Casamento</h1>
   <div id="scanner"></div>
   <div id="resultado"></div>
-  <div id="lista-codigos" style="margin-top: 40px; padding: 10px;"></div>
+
+  <!-- Opcional: Lista visível dos códigos -->
+  <div id="lista-codigos"></div>
 
   <script>
     let convidados = [];
 
     async function carregarDadosPlanilha() {
-      const url = 'https://opensheet.elk.sh/1IkI3IVm0Awu4bqiDHBk6M_t1aaN-zEUT3Y_O0UBoH4/PresencaCasamento';
+      const url = 'https://opensheet.elk.sh/1IkI3IVm0AWu4bqiDHBk6M_t1aaN-zEUT3Y_O0UBoH4/PresencaCasamento';
       try {
         const resposta = await fetch(url);
         const dados = await resposta.json();
-        convidados = dados.map(item => item["CÃ³digo"].trim());
-        mostrarCodigosNaTela();
+        convidados = dados.map(item => item['Código'].trim());
+        mostrarCodigosNaTela(); // Opcional – pode remover essa linha se não quiser mostrar os códigos
       } catch (erro) {
         console.error("Erro ao carregar dados da planilha:", erro);
       }
@@ -52,7 +63,7 @@
     function validarCodigo(codigo) {
       const resultadoDiv = document.getElementById("resultado");
       if (convidados.includes(codigo.trim())) {
-        resultadoDiv.innerHTML = `<p style="color:green; font-weight:bold;">✅ Convidado confirmado: ${codigo}</p>`;
+        resultadoDiv.innerHTML = `<p style="color:green; font-weight:bold;">✔️ Convidado confirmado: ${codigo}</p>`;
       } else {
         resultadoDiv.innerHTML = `<p style="color:red; font-weight:bold;">❌ Nome não encontrado: ${codigo}</p>`;
       }
@@ -65,19 +76,23 @@
       html5QrCode.start(
         { facingMode: "environment" },
         config,
-        (decodedText) => {
-          html5QrCode.stop();
-          validarCodigo(decodedText);
+        (decodedText, decodedResult) => {
+          html5QrCode.stop().then(() => {
+            validarCodigo(decodedText);
+            setTimeout(() => iniciarScanner(), 2000);
+          });
         },
         (errorMessage) => {
-          console.warn(`Erro no scan: ${errorMessage}`);
+          // Ignorar erros de leitura
         }
-      ).catch(err => console.error("Erro ao iniciar scanner:", err));
+      ).catch(err => {
+        console.error("Erro ao iniciar scanner", err);
+      });
     }
 
+    // Inicializar
     carregarDadosPlanilha();
     iniciarScanner();
   </script>
-
 </body>
 </html>
