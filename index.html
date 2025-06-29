@@ -4,89 +4,135 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Check-in do Casamento</title>
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
   <style>
     body {
-      font-family: Arial, sans-serif;
+      font-family: "Georgia", serif;
+      background-color: #f7f1ea;
+      margin: 0;
+      padding: 20px;
       text-align: center;
-      margin-top: 30px;
+      color: #3b3b3b;
     }
+
+    h1 {
+      font-size: 28px;
+      margin-top: 10px;
+      margin-bottom: 30px;
+    }
+
+    #gr {
+      font-size: 36px;
+      font-weight: bold;
+      letter-spacing: 2px;
+      margin-bottom: 5px;
+      color: #a89d91;
+    }
+
     #reader {
-      width: 300px;
-      margin: auto;
+      width: 250px;
+      margin: 0 auto 20px;
     }
-    #result {
-      margin-top: 20px;
+
+    .resultado {
       font-size: 18px;
+      margin-top: 15px;
     }
-    #list {
-      margin-top: 40px;
+
+    .confirmado {
+      color: #0a8f2f;
+      font-weight: bold;
+    }
+
+    .nao-encontrado {
+      color: #c0392b;
+      font-weight: bold;
+    }
+
+    ul {
       text-align: left;
-      width: fit-content;
-      margin-left: auto;
-      margin-right: auto;
+      max-width: 320px;
+      margin: 30px auto 0;
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+    }
+
+    .subtitulo {
+      font-size: 16px;
+      font-weight: bold;
+      margin-bottom: 10px;
+      color: #7d7266;
+    }
+
+    .destaque {
+      font-weight: bold;
+      color: #2e2e2e;
+      font-size: 16px;
     }
   </style>
-  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 </head>
 <body>
+  <div id="gr">GR</div>
+  <h1>Check-in do Casamento</h1>
 
-  <h2>Check-in do Casamento</h2>
   <div id="reader"></div>
+  <div id="resultado" class="resultado"></div>
 
-  <div id="result"></div>
-
-  <div id="list">
-    <h4>📋 Códigos lidos da planilha:</h4>
-    <ul id="codeList"></ul>
+  <div id="codigos-lista">
+    <div class="subtitulo">📋 Códigos lidos da planilha:</div>
+    <ul id="lista-codigos"></ul>
   </div>
 
   <script>
-    const spreadsheetURL = "https://opensheet.elk.sh/1IkI3IVm0Awu4bqilDHBk6M_t1aaN-zEUT3Y_O0UBoH4/Sheet1";
+    const sheetURL = "https://opensheet.elk.sh/1IkI3IVm0Awu4bqilDHBk6M_t1aaN-zEUT3Y_O0UBoH4/Sheet1";
+
     let convidados = [];
 
-    fetch(spreadsheetURL)
+    fetch(sheetURL)
       .then(res => res.json())
       .then(data => {
-        convidados = data.map(row => ({
-          codigo: row["Código"]?.trim(),
-          nome: row["Nome"]?.trim()
+        convidados = data.map(item => ({
+          codigo: item["Código"]?.trim(),
+          nome: item["Nome"]?.trim()
         }));
-        const codeList = document.getElementById("codeList");
+
+        const lista = document.getElementById("lista-codigos");
         convidados.forEach(c => {
           const li = document.createElement("li");
           li.textContent = c.codigo;
-          codeList.appendChild(li);
+          lista.appendChild(li);
         });
       })
-      .catch(() => {
-        document.getElementById("result").innerHTML = `<p style="color: red;">Erro ao carregar dados da planilha.</p>`;
+      .catch(err => {
+        document.getElementById("resultado").innerHTML = "<span class='nao-encontrado'>Erro ao carregar dados da planilha.</span>";
+        console.error(err);
       });
 
-    function onScanSuccess(decodedText, decodedResult) {
-      const resultadoDiv = document.getElementById("result");
+    function onScanSuccess(decodedText) {
+      const resultado = document.getElementById("resultado");
       const convidado = convidados.find(c => c.codigo === decodedText.trim());
 
       if (convidado) {
-        resultadoDiv.innerHTML = `<p style="color: green;">✔️ Convidado confirmado:<br><strong>${convidado.nome}</strong><br>Código: ${convidado.codigo}</p>`;
+        resultado.innerHTML = `<span class="confirmado">✔️ Convidado confirmado: <span class="destaque">${convidado.nome}</span><br>Código: ${convidado.codigo}</span>`;
       } else {
-        resultadoDiv.innerHTML = `<p style="color: red;">❌ Nome não encontrado: ${decodedText}</p>`;
+        resultado.innerHTML = `<span class="nao-encontrado">❌ Código não encontrado: ${decodedText}</span>`;
       }
     }
 
     const html5QrCode = new Html5Qrcode("reader");
-    Html5Qrcode.getCameras().then(devices => {
-      if (devices && devices.length) {
+    Html5Qrcode.getCameras().then(cameras => {
+      if (cameras && cameras.length) {
         html5QrCode.start(
           { facingMode: "environment" },
-          {
-            fps: 10,
-            qrbox: 250
-          },
+          { fps: 10, qrbox: 200 },
           onScanSuccess
         );
       }
+    }).catch(err => {
+      document.getElementById("resultado").innerText = "Erro ao acessar a câmera.";
     });
   </script>
-
 </body>
 </html>
