@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Check-in do Casamento</title>
-  <script src="https://unpkg.com/html5-qrcode"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -14,84 +14,84 @@
       width: 300px;
       margin: auto;
     }
-    #resultado {
+    #result {
+      margin-top: 20px;
       font-size: 18px;
-      margin-top: 15px;
+    }
+    .success {
+      color: green;
       font-weight: bold;
     }
-    #lista-codigos {
-      margin-top: 40px;
+    .error {
+      color: red;
+      font-weight: bold;
+    }
+    ul {
       text-align: left;
-      max-width: 400px;
-      margin-left: auto;
-      margin-right: auto;
+      display: inline-block;
     }
   </style>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/minified/html5-qrcode.min.js"></script>
 </head>
 <body>
   <h2>Check-in do Casamento</h2>
-
   <div id="reader"></div>
-  <div id="resultado"></div>
-
+  <div id="result"></div>
   <div id="lista-codigos">
     <h3>📋 Códigos lidos da planilha:</h3>
-    <ul id="lista-codigos-ul"></ul>
+    <ul id="codigos-lista"></ul>
   </div>
 
   <script>
+    const planilhaID = "1IkI3IVm0Awu4bqilDHBk6M_t1aaN-zEUT3Y_O0UBoH4";
+    const aba = "Sheet1";
+    const apiURL = `https://opensheet.elk.sh/${planilhaID}/${aba}`;
+
     let convidados = [];
 
-    async function carregarDadosPlanilha() {
-      const url = 'https://opensheet.elk.sh/1IkI3IVm0Awu4bqilDHBk6M_t1aaN-zEUT3Y_O0UBoH4/Sheet1';
-
-      try {
-        const resposta = await fetch(url);
-        const dados = await resposta.json();
-
-        convidados = dados.map(item => item['Código'].trim());
-
-        // Mostra os códigos na tela
-        const listaUl = document.getElementById("lista-codigos-ul");
-        listaUl.innerHTML = convidados.map(c => `<li>${c}</li>`).join("");
-      } catch (erro) {
-        document.getElementById("resultado").innerHTML = "<span style='color: red;'>Erro ao carregar dados da planilha.</span>";
-      }
-    }
+    fetch(apiURL)
+      .then(response => response.json())
+      .then(data => {
+        convidados = data;
+        const lista = document.getElementById("codigos-lista");
+        data.forEach(item => {
+          const li = document.createElement("li");
+          li.textContent = item.Código;
+          lista.appendChild(li);
+        });
+        iniciarScanner();
+      })
+      .catch(error => {
+        document.getElementById("result").innerHTML = "<span class='error'>Erro ao carregar dados da planilha.</span>";
+        console.error("Erro ao carregar a planilha:", error);
+      });
 
     function iniciarScanner() {
       const scanner = new Html5Qrcode("reader");
 
-      scanner.start(
-        { facingMode: "environment" },
-        {
-          fps: 10,
-          qrbox: 250
-        },
-        (codigoLido) => {
-          verificarCodigo(codigoLido.trim());
-          scanner.stop();
-          setTimeout(() => iniciarScanner(), 2000);
-        },
-        (erro) => {
-          // console.log("Erro leitura QR:", erro);
+      function onScanSuccess(qrCodeMessage) {
+        const resultado = document.getElementById("result");
+        const encontrado = convidados.find(pessoa => pessoa.Código.trim() === qrCodeMessage.trim());
+
+        if (encontrado) {
+          resultado.innerHTML = `<span class="success">✔️ Convidado confirmado: ${encontrado.Nome}</span>`;
+        } else {
+          resultado.innerHTML = `<span class="error">❌ Código não encontrado: ${qrCodeMessage}</span>`;
         }
-      );
-    }
 
-    function verificarCodigo(codigo) {
-      const resultadoDiv = document.getElementById("resultado");
-
-      if (convidados.includes(codigo)) {
-        resultadoDiv.innerHTML = `<span style='color: green;'>✔ Convidado confirmado: ${codigo}</span>`;
-      } else {
-        resultadoDiv.innerHTML = `<span style='color: red;'>❌ Nome não encontrado: ${codigo}</span>`;
+        scanner.stop().then(() => {
+          setTimeout(() => {
+            resultado.innerHTML = "";
+            iniciarScanner();
+          }, 3000);
+        });
       }
-    }
 
-    // Inicializa tudo
-    carregarDadosPlanilha();
-    iniciarScanner();
+      scanner.start({ facingMode: "environment" }, {
+        fps: 10,
+        qrbox: 200
+      }, onScanSuccess);
+    }
   </script>
 </body>
 </html>
