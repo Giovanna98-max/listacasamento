@@ -1,27 +1,26 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Check-in do Casamento</title>
-  <script src="https://unpkg.com/html5-qrcode"></script>
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
       text-align: center;
-      padding: 30px;
+      padding: 20px;
     }
     #scanner {
       width: 300px;
       margin: auto;
     }
     #resultado {
+      margin-top: 20px;
       font-size: 18px;
       font-weight: bold;
-      margin-top: 20px;
     }
     #lista-codigos {
       margin-top: 40px;
-      padding: 10px;
       text-align: left;
       max-width: 400px;
       margin-left: auto;
@@ -39,11 +38,11 @@
     let convidados = [];
 
     async function carregarDadosPlanilha() {
-      const url = 'https://opensheet.elk.sh/1IkI3IVm0Awu4bqiDHBk6M_t1aaN-zEUT3Y_O0UBoH4/Sheet1';
+      const url = 'https://opensheet.elk.sh/1IkI3IVm0Awu4bqi1DHBk6M_t1aaN-zEUT3Y_0UB0h4/Sheet1';
       try {
         const resposta = await fetch(url);
         const dados = await resposta.json();
-        convidados = dados.map(item => item['Código']?.trim()).filter(Boolean);
+        convidados = dados.map(item => item['Código']?.trim());
         mostrarCodigosNaTela();
       } catch (erro) {
         console.error("Erro ao carregar dados da planilha:", erro);
@@ -52,8 +51,7 @@
 
     function mostrarCodigosNaTela() {
       const listaDiv = document.getElementById("lista-codigos");
-      listaDiv.innerHTML =
-        "<h3>📋 Códigos lidos da planilha:</h3><ul>" +
+      listaDiv.innerHTML = "<h3>📋 Códigos lidos da planilha:</h3><ul>" +
         convidados.map(c => `<li>${c}</li>`).join("") +
         "</ul>";
     }
@@ -61,9 +59,9 @@
     function validarCodigo(codigo) {
       const resultadoDiv = document.getElementById("resultado");
       if (convidados.includes(codigo.trim())) {
-        resultadoDiv.innerHTML = `<p style="color:green; font-weight:bold;">✔️ Convidado confirmado: ${codigo}</p>`;
+        resultadoDiv.innerHTML = `<p style="color:green;">✅ Convidado confirmado: ${codigo}</p>`;
       } else {
-        resultadoDiv.innerHTML = `<p style="color:red; font-weight:bold;">❌ Nome não encontrado: ${codigo}</p>`;
+        resultadoDiv.innerHTML = `<p style="color:red;">❌ Nome não encontrado: ${codigo}</p>`;
       }
     }
 
@@ -79,9 +77,11 @@
           validarCodigo(decodedText);
         },
         (errorMessage) => {
-          // erros ignorados
+          // console.warn(`Erro no scan: ${errorMessage}`);
         }
-      ).catch(err => console.error("Erro ao iniciar scanner:", err));
+      ).catch(err => {
+        console.error("Erro ao iniciar scanner:", err);
+      });
     }
 
     carregarDadosPlanilha();
