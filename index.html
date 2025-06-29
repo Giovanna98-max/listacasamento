@@ -53,7 +53,7 @@
       .then(response => response.json())
       .then(data => {
         convidados = data.map(item => ({
-          codigo: item["Código"]?.trim(),
+          codigo: item["Código"]?.trim().toUpperCase(),
           nome: item["Nome"]?.trim()
         }));
 
@@ -80,7 +80,7 @@
         const convidado = convidados.find(p => p.codigo === codigoLido);
 
         if (convidado) {
-          resultado.innerHTML = `<span class="success">✔️ Convidado confirmado: ${convidado.nome} (Código: ${convidado.codigo})</span>`;
+          resultado.innerHTML = `<span class="success">✔️ ${convidado.nome} confirmado(a) (Código: ${convidado.codigo})</span>`;
         } else {
           resultado.innerHTML = `<span class="error">❌ Código não encontrado: ${codigoLido}</span>`;
         }
