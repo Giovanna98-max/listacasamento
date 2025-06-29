@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
   <title>Check-in do Casamento</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -52,13 +52,18 @@
     fetch(apiURL)
       .then(response => response.json())
       .then(data => {
-        convidados = data;
+        convidados = data.map(item => ({
+          codigo: item["Código"]?.trim(),
+          nome: item["Nome"]?.trim()
+        }));
+
         const lista = document.getElementById("codigos-lista");
-        data.forEach(item => {
+        convidados.forEach(item => {
           const li = document.createElement("li");
-          li.textContent = item.Código;
+          li.textContent = item.codigo;
           lista.appendChild(li);
         });
+
         iniciarScanner();
       })
       .catch(error => {
@@ -71,19 +76,20 @@
 
       function onScanSuccess(qrCodeMessage) {
         const resultado = document.getElementById("result");
-        const encontrado = convidados.find(pessoa => pessoa.Código.trim() === qrCodeMessage.trim());
+        const codigoLido = qrCodeMessage.trim().toUpperCase();
+        const convidado = convidados.find(p => p.codigo === codigoLido);
 
-        if (encontrado) {
-          resultado.innerHTML = `<span class="success">✔️ Convidado confirmado: ${encontrado.Nome} (Código: ${encontrado.Código})</span>`;
+        if (convidado) {
+          resultado.innerHTML = `<span class="success">✔️ Convidado confirmado: ${convidado.nome} (Código: ${convidado.codigo})</span>`;
         } else {
-          resultado.innerHTML = `<span class="error">❌ Código não encontrado: ${qrCodeMessage}</span>`;
+          resultado.innerHTML = `<span class="error">❌ Código não encontrado: ${codigoLido}</span>`;
         }
 
         scanner.stop().then(() => {
           setTimeout(() => {
             resultado.innerHTML = "";
             iniciarScanner();
-          }, 3000);
+          }, 3500);
         });
       }
 
