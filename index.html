@@ -4,90 +4,77 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Check-in do Casamento</title>
-  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  <script src="https://unpkg.com/html5-qrcode"></script>
   <style>
     body {
-      font-family: "Georgia", serif;
-      background-color: #f7f1ea;
-      margin: 0;
-      padding: 20px;
+      font-family: 'Georgia', serif;
+      background-color: #f8f5f0;
+      background-image: radial-gradient(#ece6dc 1px, transparent 1px);
+      background-size: 20px 20px;
+      color: #2f2f2f;
       text-align: center;
-      color: #3b3b3b;
+      padding: 2rem;
     }
-
     h1 {
-      font-size: 28px;
-      margin-top: 10px;
-      margin-bottom: 30px;
-    }
-
-    #gr {
-      font-size: 36px;
+      font-size: 1.8rem;
+      margin-bottom: 1rem;
       font-weight: bold;
-      letter-spacing: 2px;
-      margin-bottom: 5px;
+    }
+    .monograma {
+      font-family: 'Georgia', serif;
+      font-size: 2.5rem;
+      font-weight: bold;
+      margin-bottom: 0.5rem;
       color: #a89d91;
     }
-
-    #reader {
-      width: 250px;
-      margin: 0 auto 20px;
+    .scanner {
+      margin: 0 auto 1rem;
+      width: 300px;
+      max-width: 90vw;
+      border: 4px solid rgba(0,0,0,0.1);
+      border-radius: 12px;
+      background-color: white;
     }
-
-    .resultado {
-      font-size: 18px;
-      margin-top: 15px;
+    .result {
+      margin-top: 1rem;
+      font-size: 1.1rem;
     }
-
-    .confirmado {
-      color: #0a8f2f;
+    .result.success {
+      color: #2e7d32;
       font-weight: bold;
     }
-
-    .nao-encontrado {
-      color: #c0392b;
+    .result.error {
+      color: #c62828;
       font-weight: bold;
     }
-
-    ul {
+    .lista-codigos {
       text-align: left;
-      max-width: 320px;
-      margin: 30px auto 0;
+      max-width: 400px;
+      margin: 2rem auto 0;
+      padding: 1rem;
       background-color: #fff;
-      padding: 20px;
       border-radius: 8px;
       border: 1px solid #ddd;
     }
-
-    .subtitulo {
-      font-size: 16px;
-      font-weight: bold;
-      margin-bottom: 10px;
-      color: #7d7266;
-    }
-
-    .destaque {
-      font-weight: bold;
-      color: #2e2e2e;
-      font-size: 16px;
+    .lista-codigos ul {
+      list-style: disc;
+      padding-left: 1.5rem;
+      font-size: 0.9rem;
     }
   </style>
 </head>
 <body>
-  <div id="gr">GR</div>
+  <div class="monograma">GR</div>
   <h1>Check-in do Casamento</h1>
-
-  <div id="reader"></div>
-  <div id="resultado" class="resultado"></div>
-
-  <div id="codigos-lista">
-    <div class="subtitulo">📋 Códigos lidos da planilha:</div>
+  <div id="reader" class="scanner"></div>
+  <div id="result" class="result"></div>
+  <div class="lista-codigos">
+    <strong>📋 Códigos lidos da planilha:</strong>
     <ul id="lista-codigos"></ul>
   </div>
 
   <script>
     const sheetURL = "https://opensheet.elk.sh/1IkI3IVm0Awu4bqilDHBk6M_t1aaN-zEUT3Y_O0UBoH4/Sheet1";
-
     let convidados = [];
 
     fetch(sheetURL)
@@ -106,18 +93,18 @@
         });
       })
       .catch(err => {
-        document.getElementById("resultado").innerHTML = "<span class='nao-encontrado'>Erro ao carregar dados da planilha.</span>";
-        console.error(err);
+        document.getElementById("result").innerHTML =
+          "<div class='result error'>Erro ao carregar dados da planilha.</div>";
       });
 
     function onScanSuccess(decodedText) {
-      const resultado = document.getElementById("resultado");
+      const resultado = document.getElementById("result");
       const convidado = convidados.find(c => c.codigo === decodedText.trim());
 
       if (convidado) {
-        resultado.innerHTML = `<span class="confirmado">✔️ Convidado confirmado: <span class="destaque">${convidado.nome}</span><br>Código: ${convidado.codigo}</span>`;
+        resultado.innerHTML = `<div class="result success">✔️ Convidado confirmado:<br><strong>${convidado.nome}</strong><br>Código: ${convidado.codigo}</div>`;
       } else {
-        resultado.innerHTML = `<span class="nao-encontrado">❌ Código não encontrado: ${decodedText}</span>`;
+        resultado.innerHTML = `<div class="result error">❌ Código não encontrado: ${decodedText}</div>`;
       }
     }
 
@@ -131,7 +118,7 @@
         );
       }
     }).catch(err => {
-      document.getElementById("resultado").innerText = "Erro ao acessar a câmera.";
+      document.getElementById("result").innerText = "Erro ao acessar a câmera.";
     });
   </script>
 </body>
