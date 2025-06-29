@@ -4,64 +4,77 @@
   <meta charset="UTF-8">
   <title>Check-in do Casamento</title>
   <style>
-    body { font-family: Arial, sans-serif; text-align: center; margin-top: 20px; }
-    video { width: 300px; height: auto; margin-top: 10px; }
-    #result { margin-top: 20px; font-size: 18px; font-weight: bold; }
-    #codesList { text-align: left; max-width: 300px; margin: 20px auto; }
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 2rem;
+    }
+    #reader {
+      width: 300px;
+      margin: 0 auto;
+    }
+    #status {
+      font-size: 1.2rem;
+      margin-top: 1rem;
+    }
+    #codigos-lista {
+      text-align: left;
+      display: inline-block;
+      margin-top: 2rem;
+    }
   </style>
+  <script src="https://unpkg.com/html5-qrcode"></script>
 </head>
 <body>
   <h2>Check-in do Casamento</h2>
-  <video id="preview"></video>
-  <div id="result"></div>
-  <div id="codesList">
-    <p>📋 <strong>Códigos lidos da planilha:</strong></p>
-    <ul id="codeList"></ul>
+  <div id="reader"></div>
+  <div id="status"></div>
+
+  <div id="codigos-lista">
+    <h3>📋 Códigos lidos da planilha:</h3>
+    <ul id="lista-codigos"></ul>
   </div>
 
-  <script type="module">
-    import QrScanner from "https://cdn.jsdelivr.net/npm/qr-scanner@1.4.2/qr-scanner.min.js";
-
-    const videoElem = document.getElementById('preview');
-    const resultElem = document.getElementById('result');
-    const codeListElem = document.getElementById('codeList');
-
-    let validGuests = {};
+  <script>
+    const spreadsheetURL = "https://opensheet.elk.sh/1IkI3IVm0Awu4bqilDHBk6M_t1aaN-zEUT3Y_O0UBoH4/Sheet1";
+    let convidados = [];
 
     // Carrega os dados da planilha
-    fetch("https://opensheet.elk.sh/1IkI3IVm0Awu4bqilDHBk6M_t1aaN-zEUT3Y_O0UBoH4/Sheet1")
+    fetch(spreadsheetURL)
       .then(res => res.json())
       .then(data => {
-        data.forEach(item => {
-          const code = item["Código"]?.trim();
-          const nome = item["Nome"]?.trim();
-          if (code && nome) {
-            validGuests[code] = nome;
-            const li = document.createElement("li");
-            li.textContent = code;
-            codeListElem.appendChild(li);
-          }
-        });
+        convidados = data.map(row => ({
+          codigo: row["Código"].trim(),
+          nome: row["Nome"].trim()
+        }));
 
-        startScanner();
+        const listaEl = document.getElementById("lista-codigos");
+        convidados.forEach(c => {
+          const li = document.createElement("li");
+          li.textContent = c.codigo;
+          listaEl.appendChild(li);
+        });
       })
       .catch(err => {
-        resultElem.innerHTML = "<span style='color:red;'>Erro ao carregar dados da planilha.</span>";
+        document.getElementById("status").innerHTML = "<span style='color: red;'>Erro ao carregar dados da planilha.</span>";
         console.error(err);
       });
 
-    function startScanner() {
-      const scanner = new QrScanner(videoElem, result => {
-        const code = result.data.trim();
-        const nome = validGuests[code];
-        if (nome) {
-          resultElem.innerHTML = `<span style='color:green;'>✔️ Convidado confirmado: <strong>${nome}</strong> (${code})</span>`;
-        } else {
-          resultElem.innerHTML = `<span style='color:red;'>❌ Código não encontrado: ${code}</span>`;
-        }
-      });
-      scanner.start();
+    function onScanSuccess(decodedText, decodedResult) {
+      const statusEl = document.getElementById("status");
+      const encontrado = convidados.find(c => c.codigo === decodedText.trim());
+
+      if (encontrado) {
+        statusEl.innerHTML = `<span style="color: green;">✔️ Convidado confirmado: ${encontrado.nome} (${encontrado.codigo})</span>`;
+      } else {
+        statusEl.innerHTML = `<span style="color: red;">❌ Nome não encontrado: ${decodedText}</span>`;
+      }
     }
+
+    new Html5QrcodeScanner("reader", {
+      fps: 10,
+      qrbox: 200
+    }).render(onScanSuccess);
   </script>
 </body>
 </html>
