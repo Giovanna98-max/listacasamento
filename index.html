@@ -3,39 +3,31 @@
 <head>
   <meta charset="UTF-8" />
   <title>Check-in do Casamento</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-      text-align: center;
-    }
-    #reader {
-      width: 300px;
-      margin: 20px auto;
-    }
-    #resultado {
-      margin-top: 20px;
-      font-size: 18px;
-      font-weight: bold;
-    }
-  </style>
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 </head>
 <body>
-  <h1>Check-in do Casamento</h1>
-
-  <div id="reader"></div>
-  <div id="resultado"></div>
+  <h2 style="text-align:center;">Check-in do Casamento</h2>
+  <div id="leitor" style="width:300px; margin: auto;"></div>
+  <div id="resultado" style="text-align:center; margin-top: 20px;"></div>
   <div id="lista-codigos" style="margin-top: 40px; padding: 10px;"></div>
 
   <script>
     let convidados = [];
 
-    function mostrarCodigosNaTela() {
-      const listaDiv = document.getElementById("lista-codigos");
-      listaDiv.innerHTML = "<h3>📋 Códigos lidos da planilha:</h3><ul>" +
-        convidados.map(c => `<li>${c}</li>`).join("") +
-        "</ul>";
+    function iniciarScanner() {
+      const html5QrCode = new Html5Qrcode("leitor");
+      const config = { fps: 10, qrbox: 250 };
+
+      html5QrCode.start({ facingMode: "environment" }, config,
+        (decodedText) => {
+          html5QrCode.stop();
+          validarCodigo(decodedText);
+          setTimeout(() => iniciarScanner(), 2000);
+        },
+        (error) => {}
+      ).catch(err => {
+        console.error("Erro ao iniciar scanner", err);
+      });
     }
 
     function validarCodigo(codigo) {
@@ -47,6 +39,12 @@
       }
     }
 
+    function mostrarCodigosNaTela() {
+      const listaDiv = document.getElementById("lista-codigos");
+      listaDiv.innerHTML = "<h3>📋 Códigos lidos da planilha:</h3><ul>" +
+        convidados.map(c => `<li>${c}</li>`).join("") + "</ul>";
+    }
+
     async function carregarDadosPlanilha() {
       const url = 'https://opensheet.elk.sh/1IkI3IVm0Awu4bqi1DHbK6Mt1zaN-zEUT3Y_O0UBoH4/Sheet1';
       try {
@@ -54,31 +52,14 @@
         const dados = await resposta.json();
         convidados = dados.map(item => item['Código'].trim());
         mostrarCodigosNaTela();
-        iniciarScanner(); // só inicia a câmera depois que os dados foram carregados
       } catch (erro) {
-        console.error("Erro ao carregar dados da planilha:", erro);
         document.getElementById("resultado").innerText = "Erro ao carregar dados da planilha.";
+        console.error("Erro ao carregar dados:", erro);
       }
     }
 
-    function iniciarScanner() {
-      const html5QrCode = new Html5Qrcode("reader");
-      html5QrCode.start(
-        { facingMode: "environment" },
-        { fps: 10, qrbox: 200 },
-        (decodedText, decodedResult) => {
-          validarCodigo(decodedText);
-        },
-        (errorMessage) => {
-          // console.log(`Erro no scanner: ${errorMessage}`);
-        }
-      ).catch((err) => {
-        console.error("Erro ao iniciar scanner:", err);
-      });
-    }
-
-    // Inicia tudo
     carregarDadosPlanilha();
+    iniciarScanner();
   </script>
 </body>
 </html>
