@@ -74,7 +74,7 @@
         const encontrado = convidados.find(pessoa => pessoa.Código.trim() === qrCodeMessage.trim());
 
         if (encontrado) {
-          resultado.innerHTML = `<span class="success">✔️ Convidado confirmado: ${encontrado.Nome}</span>`;
+          resultado.innerHTML = `<span class="success">✔️ Convidado confirmado: ${encontrado.Nome} (Código: ${encontrado.Código})</span>`;
         } else {
           resultado.innerHTML = `<span class="error">❌ Código não encontrado: ${qrCodeMessage}</span>`;
         }
