@@ -1,10 +1,9 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
   <title>Check-in do Casamento</title>
-  <script src="https://unpkg.com/html5-qrcode@2.3.8"></script>
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -13,35 +12,33 @@
     }
     #scanner {
       width: 300px;
-      margin: auto;
+      margin: 0 auto;
     }
     #resultado {
       margin-top: 20px;
-      font-size: 18px;
-    }
-    #lista-codigos {
-      margin-top: 40px;
-      padding: 10px;
-      text-align: left;
+      font-size: 20px;
     }
   </style>
 </head>
 <body>
-  <h1>Check-in do Casamento</h1>
 
+  <h1>Check-in do Casamento</h1>
   <div id="scanner"></div>
   <div id="resultado"></div>
-  <div id="lista-codigos"></div>
+  <div id="lista-codigos" style="margin-top: 40px; padding: 10px;"></div>
 
   <script>
     let convidados = [];
 
-    function validarCodigo(codigo) {
-      const resultadoDiv = document.getElementById("resultado");
-      if (convidados.includes(codigo.trim())) {
-        resultadoDiv.innerHTML = `<p style="color:green; font-weight:bold;">✔️ Convidado confirmado: ${codigo}</p>`;
-      } else {
-        resultadoDiv.innerHTML = `<p style="color:red; font-weight:bold;">❌ Nome não encontrado: ${codigo}</p>`;
+    async function carregarDadosPlanilha() {
+      const url = 'https://opensheet.elk.sh/1IkI3IVm0Awu4bqiDHBk6M_t1aaN-zEUT3Y_O0UBoH4/PresencaCasamento';
+      try {
+        const resposta = await fetch(url);
+        const dados = await resposta.json();
+        convidados = dados.map(item => item["CÃ³digo"].trim());
+        mostrarCodigosNaTela();
+      } catch (erro) {
+        console.error("Erro ao carregar dados da planilha:", erro);
       }
     }
 
@@ -52,15 +49,12 @@
         "</ul>";
     }
 
-    async function carregarDadosPlanilha() {
-      const url = 'https://opensheet.elk.sh/1IkI3IVm0Awu4bqilDHBk6M_t1aaN-zEUT3Y_O0UBoH4/sheet1';
-      try {
-        const resposta = await fetch(url);
-        const dados = await resposta.json();
-        convidados = dados.map(item => item['Código'].trim());
-        mostrarCodigosNaTela();
-      } catch (erro) {
-        console.error("Erro ao carregar dados da planilha:", erro);
+    function validarCodigo(codigo) {
+      const resultadoDiv = document.getElementById("resultado");
+      if (convidados.includes(codigo.trim())) {
+        resultadoDiv.innerHTML = `<p style="color:green; font-weight:bold;">✅ Convidado confirmado: ${codigo}</p>`;
+      } else {
+        resultadoDiv.innerHTML = `<p style="color:red; font-weight:bold;">❌ Nome não encontrado: ${codigo}</p>`;
       }
     }
 
@@ -78,11 +72,12 @@
         (errorMessage) => {
           console.warn(`Erro no scan: ${errorMessage}`);
         }
-      ).catch(err => console.error("Erro ao iniciar scanner", err));
+      ).catch(err => console.error("Erro ao iniciar scanner:", err));
     }
 
     carregarDadosPlanilha();
     iniciarScanner();
   </script>
+
 </body>
 </html>
